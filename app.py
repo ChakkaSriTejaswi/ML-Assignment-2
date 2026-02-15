@@ -9,11 +9,13 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score,
-    f1_score, matthews_corrcoef, confusion_matrix
+    f1_score, matthews_corrcoef, confusion_matrix,
+    roc_auc_score
 )
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
+import joblib
 
 # -----------------------------
 # Load and preprocess dataset
@@ -67,6 +69,23 @@ else:
     # Default to internal test split
     test_X, test_y = X_test, y_test
 
+# -----------------------------
+# Provide sample test CSV download
+# -----------------------------
+sample_test = pd.DataFrame(test_X[:10], columns=[f"feature_{i}" for i in range(1, 31)])
+sample_test["Diagnosis"] = test_y[:10].values
+csv = sample_test.to_csv(index=False)
+
+st.download_button(
+    label="Download Sample Test CSV",
+    data=csv,
+    file_name="sample_test.csv",
+    mime="text/csv"
+)
+
+# -----------------------------
+# Model selection and execution
+# -----------------------------
 model_choice = st.selectbox("Choose Model", list(models.keys()))
 
 if st.button("Run Model"):
@@ -74,12 +93,20 @@ if st.button("Run Model"):
     model.fit(X_train, y_train)
     y_pred = model.predict(test_X)
 
+    # Save trained model
+    joblib.dump(model, f"model/{model_choice.replace(' ', '_')}.pkl")
+
     # Display metrics
     st.write("Accuracy:", accuracy_score(test_y, y_pred))
     st.write("Precision:", precision_score(test_y, y_pred))
     st.write("Recall:", recall_score(test_y, y_pred))
     st.write("F1 Score:", f1_score(test_y, y_pred))
     st.write("MCC:", matthews_corrcoef(test_y, y_pred))
+
+    # AUC Score (binary classification)
+    if hasattr(model, "predict_proba"):
+        y_prob = model.predict_proba(test_X)[:, 1]
+        st.write("AUC:", roc_auc_score(test_y, y_prob))
 
     # Confusion Matrix
     cm = confusion_matrix(test_y, y_pred)
