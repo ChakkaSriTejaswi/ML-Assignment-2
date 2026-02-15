@@ -62,11 +62,14 @@ uploaded_file = st.file_uploader("Upload Test CSV (optional)", type=["csv"])
 if uploaded_file is not None:
     test_df = pd.read_csv(uploaded_file)
 
-    # Normalize column names (strip spaces, lowercase)
+    # Normalize column names
     test_df.columns = test_df.columns.str.strip()
 
-    # Map Diagnosis safely (handle case sensitivity and missing values)
-    test_df['Diagnosis'] = test_df['Diagnosis'].str.upper().map({'M': 1, 'B': 0})
+    # Handle Diagnosis column safely
+    if test_df['Diagnosis'].dtype == object:
+        test_df['Diagnosis'] = test_df['Diagnosis'].astype(str).str.strip().str.upper().map({'M': 1, 'B': 0})
+    else:
+        test_df['Diagnosis'] = test_df['Diagnosis'].astype(int)
 
     # Drop rows with missing target values
     test_df = test_df.dropna(subset=['Diagnosis'])
@@ -81,11 +84,12 @@ else:
 # -----------------------------
 sample_test = pd.DataFrame(test_X[:10], columns=[f"feature_{i}" for i in range(1, 31)])
 sample_test["Diagnosis"] = test_y[:10].values
-# Convert to CSV and encode as bytes 
+
+# Convert to CSV and encode as bytes
 csv_bytes = sample_test.to_csv(index=False).encode('utf-8')
 
 st.download_button(
-    label="Download Sample Test CSV",
+    label="📥 Download Sample Test CSV",  # Added icon here
     data=csv_bytes,
     file_name="sample_test.csv",
     mime="text/csv"
