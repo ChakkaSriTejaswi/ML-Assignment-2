@@ -54,22 +54,35 @@ models = {
 # -----------------------------
 st.title("Breast Cancer Classification App")
 
+# File uploader for test data
+uploaded_file = st.file_uploader("Upload Test CSV (optional)", type=["csv"])
+
+if uploaded_file is not None:
+    test_df = pd.read_csv(uploaded_file)
+    # Expect same schema: Diagnosis + features
+    test_df['Diagnosis'] = test_df['Diagnosis'].map({'M': 1, 'B': 0})
+    test_X = scaler.transform(test_df.drop("Diagnosis", axis=1))
+    test_y = test_df["Diagnosis"]
+else:
+    # Default to internal test split
+    test_X, test_y = X_test, y_test
+
 model_choice = st.selectbox("Choose Model", list(models.keys()))
 
 if st.button("Run Model"):
     model = models[model_choice]
     model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(test_X)
 
     # Display metrics
-    st.write("Accuracy:", accuracy_score(y_test, y_pred))
-    st.write("Precision:", precision_score(y_test, y_pred))
-    st.write("Recall:", recall_score(y_test, y_pred))
-    st.write("F1 Score:", f1_score(y_test, y_pred))
-    st.write("MCC:", matthews_corrcoef(y_test, y_pred))
+    st.write("Accuracy:", accuracy_score(test_y, y_pred))
+    st.write("Precision:", precision_score(test_y, y_pred))
+    st.write("Recall:", recall_score(test_y, y_pred))
+    st.write("F1 Score:", f1_score(test_y, y_pred))
+    st.write("MCC:", matthews_corrcoef(test_y, y_pred))
 
     # Confusion Matrix
-    cm = confusion_matrix(y_test, y_pred)
+    cm = confusion_matrix(test_y, y_pred)
     st.write("Confusion Matrix:")
     fig, ax = plt.subplots()
     sns.heatmap(
