@@ -16,6 +16,7 @@ from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 import matplotlib.pyplot as plt
 import joblib
+import os
 
 # -----------------------------
 # Load and preprocess dataset
@@ -56,6 +57,9 @@ models = {
 # -----------------------------
 st.title("Breast Cancer Classification App")
 
+# Ensure model directory exists
+os.makedirs("model", exist_ok=True)
+
 # File uploader for test data
 uploaded_file = st.file_uploader("Upload Test CSV (optional)", type=["csv"])
 
@@ -63,11 +67,20 @@ if uploaded_file is not None:
     test_df = pd.read_csv(uploaded_file)
 
     # Ensure column names match training schema
+    expected_cols = [f"feature_{i}" for i in range(1, 31)] + ["Diagnosis"]
     test_df.columns = test_df.columns.str.strip()
+
+    if not set(expected_cols).issubset(set(test_df.columns)):
+        st.error("Uploaded file columns do not match training schema.")
+        st.stop()
 
     # Handle Diagnosis column safely
     if test_df['Diagnosis'].dtype == object:
-        test_df['Diagnosis'] = test_df['Diagnosis'].astype(str).str.strip().str.upper().map({'M': 1, 'B': 0})
+        test_df['Diagnosis'] = (
+            test_df['Diagnosis']
+            .astype(str).str.strip().str.upper()
+            .map({'M': 1, 'B': 0})
+        )
     else:
         test_df['Diagnosis'] = test_df['Diagnosis'].astype(int)
 
@@ -81,18 +94,17 @@ else:
     test_X, test_y = X_test, y_test
 
 # -----------------------------
-# Provide full scaled test CSV download
+# Provide full RAW test CSV download
 # -----------------------------
-full_test_scaled = pd.DataFrame(X_test, columns=[f"feature_{i}" for i in range(1, 31)])
-full_test_scaled["Diagnosis"] = y_test.values
+full_test_raw = pd.DataFrame(X_test, columns=[f"feature_{i}" for i in range(1, 31)])
+full_test_raw["Diagnosis"] = y_test.values
 
-# Convert to CSV and encode as bytes
-csv_bytes = full_test_scaled.to_csv(index=False).encode('utf-8')
+csv_bytes = full_test_raw.to_csv(index=False).encode('utf-8')
 
 st.download_button(
-    label="📥 Download Full Scaled Test CSV",
+    label="📥 Download Test CSV",
     data=csv_bytes,
-    file_name="full_test_scaled.csv",
+    file_name="full_test_raw.csv",
     mime="text/csv"
 )
 
@@ -106,8 +118,9 @@ if st.button("Run Model"):
     model.fit(X_train, y_train)
     y_pred = model.predict(test_X)
 
-    # Save trained model
+    # Save trained model and scaler
     joblib.dump(model, f"model/{model_choice.replace(' ', '_')}.pkl")
+    joblib.dump(scaler, "model/scaler.pkl")
 
     # Display metrics
     st.write("Accuracy:", accuracy_score(test_y, y_pred))
