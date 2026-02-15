@@ -74,25 +74,25 @@ if uploaded_file is not None:
     # Drop rows with missing target values
     test_df = test_df.dropna(subset=['Diagnosis'])
 
-    # IMPORTANT: Apply the same scaler used during training
+    # Apply the same scaler used during training
     test_X = scaler.transform(test_df.drop("Diagnosis", axis=1))
     test_y = test_df["Diagnosis"].astype(int)
 else:
     test_X, test_y = X_test, y_test
 
 # -----------------------------
-# Provide sample test CSV download
+# Provide full scaled test CSV download
 # -----------------------------
-sample_test = pd.DataFrame(test_X, columns=[f"feature_{i}" for i in range(1, 31)])
-sample_test["Diagnosis"] = test_y.values
+full_test_scaled = pd.DataFrame(X_test, columns=[f"feature_{i}" for i in range(1, 31)])
+full_test_scaled["Diagnosis"] = y_test.values
 
 # Convert to CSV and encode as bytes
-csv_bytes = sample_test.to_csv(index=False).encode('utf-8')
+csv_bytes = full_test_scaled.to_csv(index=False).encode('utf-8')
 
 st.download_button(
-    label="📥 Download Sample Test CSV",  # Added icon here
+    label="📥 Download Full Scaled Test CSV",
     data=csv_bytes,
-    file_name="sample_test.csv",
+    file_name="full_test_scaled.csv",
     mime="text/csv"
 )
 
