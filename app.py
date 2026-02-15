@@ -82,8 +82,8 @@ else:
 # -----------------------------
 # Provide sample test CSV download
 # -----------------------------
-sample_test = pd.DataFrame(test_X[:10], columns=[f"feature_{i}" for i in range(1, 31)])
-sample_test["Diagnosis"] = test_y[:10].values
+sample_test = pd.DataFrame(test_X, columns=[f"feature_{i}" for i in range(1, 31)])
+sample_test["Diagnosis"] = test_y.values
 
 # Convert to CSV and encode as bytes
 csv_bytes = sample_test.to_csv(index=False).encode('utf-8')
