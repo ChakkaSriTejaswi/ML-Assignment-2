@@ -61,12 +61,19 @@ uploaded_file = st.file_uploader("Upload Test CSV (optional)", type=["csv"])
 
 if uploaded_file is not None:
     test_df = pd.read_csv(uploaded_file)
-    # Expect same schema: Diagnosis + features
-    test_df['Diagnosis'] = test_df['Diagnosis'].map({'M': 1, 'B': 0})
+
+    # Normalize column names (strip spaces, lowercase)
+    test_df.columns = test_df.columns.str.strip()
+
+    # Map Diagnosis safely (handle case sensitivity and missing values)
+    test_df['Diagnosis'] = test_df['Diagnosis'].str.upper().map({'M': 1, 'B': 0})
+
+    # Drop rows with missing target values
+    test_df = test_df.dropna(subset=['Diagnosis'])
+
     test_X = scaler.transform(test_df.drop("Diagnosis", axis=1))
-    test_y = test_df["Diagnosis"]
+    test_y = test_df["Diagnosis"].astype(int)
 else:
-    # Default to internal test split
     test_X, test_y = X_test, y_test
 
 # -----------------------------
