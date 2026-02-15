@@ -62,7 +62,7 @@ uploaded_file = st.file_uploader("Upload Test CSV (optional)", type=["csv"])
 if uploaded_file is not None:
     test_df = pd.read_csv(uploaded_file)
 
-    # Normalize column names
+    # Ensure column names match training schema
     test_df.columns = test_df.columns.str.strip()
 
     # Handle Diagnosis column safely
@@ -74,6 +74,7 @@ if uploaded_file is not None:
     # Drop rows with missing target values
     test_df = test_df.dropna(subset=['Diagnosis'])
 
+    # IMPORTANT: Apply the same scaler used during training
     test_X = scaler.transform(test_df.drop("Diagnosis", axis=1))
     test_y = test_df["Diagnosis"].astype(int)
 else:
