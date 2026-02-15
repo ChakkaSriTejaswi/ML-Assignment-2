@@ -96,13 +96,17 @@ else:
 # -----------------------------
 # Provide full RAW test CSV download
 # -----------------------------
-full_test_raw = pd.DataFrame(X_test, columns=[f"feature_{i}" for i in range(1, 31)])
+# Inverse transform to get raw values back
+full_test_raw = pd.DataFrame(
+    scaler.inverse_transform(X_test),
+    columns=[f"feature_{i}" for i in range(1, 31)]
+)
 full_test_raw["Diagnosis"] = y_test.values
 
 csv_bytes = full_test_raw.to_csv(index=False).encode('utf-8')
 
 st.download_button(
-    label="📥 Download Test CSV",
+    label="📥 Download Full Raw Test CSV",
     data=csv_bytes,
     file_name="full_test_raw.csv",
     mime="text/csv"
